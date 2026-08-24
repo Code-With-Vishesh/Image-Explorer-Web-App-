@@ -1,0 +1,7 @@
+{
+  "nav": { "signin": "تسجيل الدخول", "logout": "تسجيل الخروج", "collections": "المجموعات" },
+  "hero": { "badge": "مدعوم من <span class=\"brand-credit\">Code With Vishesh</span>", "title": "اكتشف الصور<br>بلا حدود للخيال", "search": "بحث", "upload": "رفع", "orientation": "الاتجاه", "all": "الكل", "landscape": "أفقي", "portrait": "عمودي", "square": "مربع", "trending": "🔥 الرائج:", "saved": "💾 المحفوظة:", "photos": "صور", "artists": "فنانون", "free": "مجاني" },
+  "results": { "label": "النتائج", "toggleGrid": "عرض ثلاثي الأبعاد", "collections": "المجموعات", "grid": "عرض الشبكة", "loadMore": "تحميل المزيد" },
+  "modal": { "loginTitle": "مرحباً بعودتك", "signupTitle": "إنشاء حساب", "email": "البريد الإلكتروني", "password": "كلمة المرور", "name": "الاسم الكامل", "confirm": "تأكيد كلمة المرور", "signIn": "تسجيل الدخول", "signUp": "إنشاء حساب", "createAccount": "إنشاء حساب", "noAccount": "ليس لديك حساب؟", "alreadyHave": "لديك حساب بالفعل؟", "uploadTitle": "رفع الصور", "uploadBrowse": "انقر للتصفح", "uploadOr": "أو اسحب وأفلت", "uploadHint": "PNG وJPG وWEBP حتى 20MB لكل ملف", "addToGallery": "إضافة إلى المعرض", "collectionTitle": "إضافة إلى مجموعة", "collectionName": "اسم المجموعة", "collectionDesc": "الوصف", "saveCollection": "حفظ المجموعة" },
+  "collections": { "title": "المجموعات", "create": "إنشاء مجموعة", "empty": "لا توجد مجموعات بعد", "rename": "إعادة تسمية", "duplicate": "نسخ", "delete": "حذف" }
+}

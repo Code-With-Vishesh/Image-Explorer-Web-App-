@@ -1,0 +1,23 @@
+const fs = require('fs');
+const path = 'd:\\WEB DEVELOPMENT\\FRONT-END WEBSITES\\HTML PROJECTS\\IMAGES\\new images.html';
+let text = fs.readFileSync(path, 'utf8');
+const start = text.indexOf('const translations={');
+const end = text.indexOf('function detectLanguage()');
+if (start === -1 || end === -1 || end <= start) {
+  throw new Error('Could not find translation block boundaries');
+}
+const replacement = `const translations={
+  en:{
+    nav:{signin:'Sign In',logout:'Logout',collections:'Collections'},
+    hero:{badge:'Powered by Pexels & Pixabay',title:'Discover Images<br>Beyond Imagination',subtitle:'Explore millions of stunning, royalty-free photos. Search, upload, and download with one click.',search:'Search',upload:'Upload',orientation:'Orientation',all:'All',landscape:'Landscape',portrait:'Portrait',square:'Square',trending:'🔥 Trending:',saved:'💾 Saved:',photos:'Photos',artists:'Artists',free:'Free'},
+    results:{label:'Results',toggleGrid:'3D View',collections:'Collections',grid:'Grid View',loadMore:'Load More'},
+    modal:{loginTitle:'Welcome Back',signupTitle:'Create Account',email:'Email address',password:'Password',name:'Full name',confirm:'Confirm password',signIn:'Sign In',signUp:'Sign Up',createAccount:'Create Account',noAccount:"Don't have an account?",alreadyHave:'Already have an account?',uploadTitle:'Upload Photos',uploadBrowse:'Click to browse',uploadOr:'or drag & drop',uploadHint:'PNG, JPG, WEBP up to 20MB each',addToGallery:'Add to Gallery',collectionTitle:'Add to Collection',collectionName:'Collection name',collectionDesc:'Description',saveCollection:'Save to Collection'},
+    details:{title:'Image Details',download:'Download',copy:'Copy Link',share:'Share',favorite:'Favorite',open:'Open Original',info:'Image Information',resolution:'Resolution',width:'Width',height:'Height',aspect:'Aspect Ratio',size:'File Size',format:'Format',colorSpace:'Color Space',orientation:'Orientation',published:'Date Published',license:'License',views:'Views',downloads:'Downloads',likes:'Likes',metadata:'EXIF Metadata',similar:'Similar Images',tags:'Related Tags',colors:'Dominant Colors',zoomIn:'Zoom In',zoomOut:'Zoom Out'},
+    collections:{title:'Collections',create:'Create Collection',empty:'No collections yet',placeholder:'Collection name',description:'Description',private:'Private',public:'Public',add:'Add to Collection',rename:'Rename',duplicate:'Duplicate',remove:'Remove',delete:'Delete',share:'Share',sort:'Sort',newest:'Newest',oldest:'Oldest',mostDownloaded:'Most Downloaded',mostViewed:'Most Viewed'}
+  }
+};
+
+`;
+text = text.slice(0, start) + replacement + text.slice(end);
+fs.writeFileSync(path, text, 'utf8');
+console.log('rewrote translation block');

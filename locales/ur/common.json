@@ -1,0 +1,7 @@
+{
+  "nav": { "signin": "سائن اِن", "logout": "سائن آؤٹ", "collections": "کلیکشنز" },
+  "hero": { "badge": "<span class=\"brand-credit\">Code With Vishesh</span> سے تقویت یافتہ", "title": "تصاویر دریافت کریں<br>تخیل سے آگے", "search": "تلاش", "upload": "اپ لوڈ", "orientation": "سمت", "all": "سب", "landscape": "لینڈ اسکیپ", "portrait": "پورٹریٹ", "square": "مربع", "trending": "🔥 مقبول:", "saved": "💾 محفوظ شدہ:", "photos": "تصاویر", "artists": "فنکار", "free": "مفت" },
+  "results": { "label": "نتائج", "toggleGrid": "3D منظر", "collections": "کلیکشنز", "grid": "گرڈ منظر", "loadMore": "مزید لوڈ کریں" },
+  "modal": { "loginTitle": "واپسی پر خوش آمدید", "signupTitle": "اکاؤنٹ بنائیں", "email": "ای میل ایڈریس", "password": "پاس ورڈ", "name": "پورا نام", "confirm": "پاس ورڈ کی تصدیق کریں", "signIn": "سائن اِن", "signUp": "سائن اپ", "createAccount": "اکاؤنٹ بنائیں", "noAccount": "اکاؤنٹ نہیں ہے؟", "alreadyHave": "پہلے سے اکاؤنٹ ہے؟", "uploadTitle": "تصاویر اپ لوڈ کریں", "uploadBrowse": "براؤز کرنے کے لیے کلک کریں", "uploadOr": "یا ڈریگ اور ڈراپ کریں", "uploadHint": "PNG، JPG، WEBP ہر ایک 20MB تک", "addToGallery": "گیلری میں شامل کریں", "collectionTitle": "کلیکشن میں شامل کریں", "collectionName": "کلیکشن کا نام", "collectionDesc": "تفصیل", "saveCollection": "کلیکشن محفوظ کریں" },
+  "collections": { "title": "کلیکشنز", "create": "کلیکشن بنائیں", "empty": "ابھی کوئی کلیکشن نہیں", "rename": "نام تبدیل کریں", "duplicate": "نقل بنائیں", "delete": "حذف کریں" }
+}
