@@ -4,7 +4,7 @@
 
 ### 🔍 Discover. Upload. Download. Explore.
 
-**A modern and interactive image discovery platform powered by Pexels & Pixabay APIs.**
+**A modern and interactive image discovery platform powered by Pexels, Pixabay & Unsplash APIs with performance optimization.**
 
 <br>
 
@@ -35,7 +35,28 @@ The project also includes a simple **authentication system using LocalStorage**,
 
 ---
 
-## 🎯 Why Image Explorer?
+## � Home Page
+
+Experience the stunning ImageLens interface — a modern image discovery platform with an intuitive design.
+
+<div align="center">
+
+![ImageLens Homepage](https://img.shields.io/badge/ImageLens-Homepage-8A2BE2?style=for-the-badge)
+
+**Powered by Code With Vishesh**
+
+- ✨ Beautiful gradient UI with particle animations
+- 🔍 Instant search across 3 image APIs (Pexels, Pixabay, Unsplash)
+- 🎨 Modern dark theme with vibrant accents
+- 💫 Smooth animations and transitions
+- 📱 Fully responsive design
+- ⚡ Lightning-fast image loading
+
+</div>
+
+---
+
+## �🎯 Why Image Explorer?
 
 Finding the right image shouldn't feel complicated.
 
@@ -67,8 +88,9 @@ Image Explorer fetches results dynamically from:
 
 * 📸 Pexels API
 * 🌎 Pixabay API
+* 🎨 Unsplash API (via secure Express proxy)
 
-Results are displayed instantly in a responsive gallery.
+Results from all 3 providers are merged and displayed instantly in a responsive gallery.
 
 ---
 
@@ -171,6 +193,9 @@ The interface focuses on a clean and interactive user experience.
 | 💾 LocalStorage    | Authentication & session data           |
 | 📸 Pexels API      | High-quality image search               |
 | 🌎 Pixabay API     | Image search & discovery                |
+| 🎨 Unsplash API    | Professional photo search               |
+| 🟩 Node.js + Express | Backend proxy server                  |
+| 🔐 Environment Vars | Secure API key management              |
 
 ---
 
@@ -202,9 +227,54 @@ Used for:
 
 ---
 
+## 🎨 Unsplash API
+
+Unsplash provides beautiful, high-quality professional photography.
+
+**Integration Method**: Secure Express proxy server (API key kept server-side)
+
+Used for:
+
+* Professional photo search
+* Extended image library
+* Photographer attribution
+* Enhanced search results
+
+---
+
+## 🔒 Secure Proxy Server
+
+A Node.js/Express backend proxy server forwards Unsplash API requests securely:
+
+* 🔐 API key stored on server (never exposed to client)
+* 🚀 Endpoint: `http://localhost:3000/api/unsplash/search`
+* ⚡ Handles rate limiting and error handling
+* 📡 Merges Unsplash results with Pexels & Pixabay
+
+**Why?** Protecting sensitive API keys from browser exposure ensures security and prevents abuse.
+
+---
+
+## ⚡ Performance Optimizations
+
+The application includes multiple performance enhancements:
+
+* 📦 **Lazy Loading**: Images load only when visible in viewport
+* 🎯 **Responsive Images**: Correct image sizes for different screens (srcset/sizes)
+* 🔄 **Async Decode**: Images decode off main thread using `decoding="async"`
+* 📊 **Incremental Rendering**: Gallery renders images in adaptive chunks (8-20 per batch)
+* ⏱️ **Scroll Throttling**: Scroll events debounced with requestAnimationFrame (rAF)
+* 👁️ **IntersectionObserver**: Auto-load pagination when reaching end of feed
+* 🚫 **AbortController**: Prevents stale requests from outdated searches overwriting results
+* 💾 **Search Caching**: Repeated searches use cached results (instant display)
+
+**Result**: Lightning-fast image loading even with large result sets!
+
+---
+
 # ⚙️ How It Works
 
-The application follows a simple workflow:
+The application follows a complete workflow:
 
 ```text
               ┌──────────────────┐
@@ -216,22 +286,38 @@ The application follows a simple workflow:
               │ JavaScript Logic │
               └────────┬─────────┘
                        │
-              ┌────────┴────────┐
-              ▼                 ▼
-       ┌──────────────┐   ┌──────────────┐
-       │ Pexels API   │   │ Pixabay API  │
-       └──────┬───────┘   └──────┬───────┘
-              │                  │
-              └────────┬─────────┘
-                       ▼
-              ┌──────────────────┐
-              │ Dynamic Gallery  │
-              └────────┬─────────┘
-                       │
-              ┌────────┴────────┐
-              ▼                 ▼
-        👁️ Preview          ⬇️ Download
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+   │ Pexels API   │   │ Pixabay API  │   │ Express Proxy│
+   │ (Direct)     │   │ (Direct)     │   │→ Unsplash API│
+   └──────┬───────┘   └──────┬───────┘   └──────┬───────┘
+          │                  │                  │
+          └────────┬─────────┴──────────────────┘
+                   ▼
+          ┌──────────────────┐
+          │ Merge Results    │
+          │ (Dedup + Sort)   │
+          └────────┬─────────┘
+                   │
+                   ▼
+          ┌──────────────────┐
+          │ Incremental      │
+          │ Chunk Rendering  │
+          │ (8-20 at a time) │
+          └────────┬─────────┘
+                   │
+          ┌────────┴────────────┐
+          ▼                     ▼
+    👁️ Preview            ⬇️ Download
 ```
+
+**Key Features in the Flow:**
+- ✅ All 3 APIs queried in parallel
+- ✅ Results merged into single feed
+- ✅ Incremental rendering for performance
+- ✅ IntersectionObserver for auto-load pagination
+- ✅ AbortController to prevent stale updates
 
 ---
 
@@ -259,39 +345,120 @@ Image-Explorer/
 
 To run the project locally, you need API keys from:
 
-* Pexels
-* Pixabay
+* 📸 Pexels
+* 🌎 Pixabay
+* 🎨 Unsplash (optional - for enhanced results)
 
-Add your API credentials inside the JavaScript configuration according to your project implementation.
+### Frontend Configuration
 
-Example:
+Add your **Pexels** and **Pixabay** API credentials inside the JavaScript:
 
 ```javascript
-const PEXELS_API_KEY = "YOUR_PEXELS_API_KEY";
-const PIXABAY_API_KEY = "YOUR_PIXABAY_API_KEY";
+const PEXELS_KEY = "YOUR_PEXELS_API_KEY";
+const PIXABAY_KEY = "YOUR_PIXABAY_API_KEY";
 ```
 
-### ⚠️ Important
+### Backend Proxy Configuration (Unsplash)
 
-Never upload real private API keys to a public GitHub repository.
+The Unsplash API is served via a secure Express proxy server.
 
-For production projects, use a backend/server-side environment variable system.
+Set the environment variable before running the server:
+
+```powershell
+# Windows PowerShell
+$env:UNSPLASH_ACCESS_KEY="YOUR_UNSPLASH_ACCESS_KEY"
+cd server
+npm install
+npm start
+```
+
+Or use the provided startup script:
+
+```powershell
+.\start-server.ps1 -UnsplashKey "YOUR_UNSPLASH_ACCESS_KEY"
+```
+
+### ⚠️ Important Security Notes
+
+- ✅ **Pexels & Pixabay keys**: OK to embed in frontend (they're public keys)
+- 🔒 **Unsplash key**: MUST be server-side only (via environment variable)
+- ⚠️ **Never commit secrets** to GitHub — use `.env` files or environment variables
+- 🛡️ **Production**: Use proper secrets management (Heroku Config Vars, AWS Secrets Manager, etc.)
 
 ---
 
-# 💻 Installation
+# 💻 Installation & Setup
 
 ## 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/Code-With-Vishesh/Image-Explorer.git
+git clone https://github.com/Code-With-Vishesh/Image-Explorer-Web-App-.git
+cd Image-Explorer-Web-App-
 ```
 
 ---
 
-## 2️⃣ Open the Project
+## 2️⃣ Install Server Dependencies (Optional - Only for Unsplash)
 
-Move into the project directory:
+Move into the server directory and install dependencies:
+
+```bash
+cd server
+npm install
+```
+
+---
+
+## 3️⃣ Set Environment Variables
+
+**Windows PowerShell:**
+
+```powershell
+$env:UNSPLASH_ACCESS_KEY="your_unsplash_key_here"
+```
+
+**macOS/Linux (Bash):**
+
+```bash
+export UNSPLASH_ACCESS_KEY="your_unsplash_key_here"
+```
+
+---
+
+## 4️⃣ Start the Proxy Server (Optional)
+
+```bash
+npm start
+```
+
+Expected output:
+```
+Unsplash proxy listening on http://localhost:3000
+```
+
+---
+
+## 5️⃣ Open the Project
+
+Open `index.html` in your browser or use VS Code Live Server:
+
+```bash
+# Using Live Server extension in VS Code
+Right-click index.html → Open with Live Server
+```
+
+---
+
+## ✅ Verify Everything Works
+
+Open DevTools (F12) → Network tab → Search for an image
+
+You should see API calls to:
+- ✅ `api.pexels.com` (Pexels)
+- ✅ `pixabay.com/api` (Pixabay)
+- ✅ `localhost:3000/api/unsplash/search` (Unsplash via proxy)
+
+
 
 ```bash
 cd Image-Explorer
