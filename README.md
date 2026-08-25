@@ -492,7 +492,7 @@ For the best development experience, use **VS Code + Live Server**.
 Add your deployed project URL here.
 
 ```text
-https://your-live-demo-url.com
+https://image-explorer-web-app.vercel.app/
 ```
 
 ---
