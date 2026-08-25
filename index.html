@@ -321,7 +321,19 @@
     }
 
     .hero-orb-2 {
-      width: 400px;
+      try {
+        // Supplement results with Unsplash via local proxy (optional)
+        const unsplashUrl = `http://localhost:3000/api/unsplash/search?query=${encodeURIComponent(q)}&page=${page}`;
+        const uResp = await fetch(unsplashUrl, { signal: options.signal });
+        if (uResp && uResp.ok) {
+          const uData = await uResp.json();
+          if (Array.isArray(uData.results) && uData.results.length) {
+            const uItems = uData.results.map((u, i) => createImageRecord({ id: `unsplash-${u.id}`, img: u.urls?.regular || u.urls?.small || u.urls?.thumb, orig: u.urls?.full || u.links?.html || u.urls?.regular, credit: u.user?.name || 'Unsplash', creditUrl: u.user?.links?.html || 'https://unsplash.com', width: u.width || 1200, height: u.height || 800, tags: (u.tags || []).map(t => t.title) || [q] }, 'unsplash', i));
+            images.push(...uItems);
+          }
+        }
+      } catch (e) { /* ignore proxy/unsplash errors */ }
+      document.getElementById('loading-area').innerHTML = '';
       height: 400px;
       background: rgba(162, 89, 255, 0.12);
       bottom: -80px;
@@ -1860,7 +1872,14 @@
       let particles = [];
       function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
       resize(); window.addEventListener('resize', resize);
-      for (let i = 0; i < 90; i++) { particles.push({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.5 + .3, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, a: Math.random() * .6 + .1 }); }
+      // Adaptive particle count: fewer on small screens or low-memory devices
+      const isSmall = window.matchMedia('(max-width:640px)').matches;
+      const deviceMemory = navigator.deviceMemory || 4;
+      const baseCount = isSmall ? 30 : 90;
+      const particleCount = Math.max(16, Math.floor(baseCount * Math.min(1, deviceMemory / 4)));
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.5 + .3, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, a: Math.random() * .6 + .1 });
+      }
       function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(180,200,255,${p.a})`; ctx.fill(); p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > canvas.width) p.vx *= -1; if (p.y < 0 || p.y > canvas.height) p.vy *= -1; }); requestAnimationFrame(draw); } draw();
     })();
     const PEXELS_KEY = 'fpWfjedYtUsLiEPx4PRat4mjBRo44spbAQY6eIODDp68Q8WYpj5jTrj4';
@@ -1877,6 +1896,10 @@
     let searchDebounceTimer = null;
     let searchAbortController = null;
     let searchRequestId = 0;
+    // Polyfill for AbortSignal.throwIfAborted (some browsers may not implement it)
+    if (typeof AbortSignal !== 'undefined' && !AbortSignal.prototype.throwIfAborted) {
+      AbortSignal.prototype.throwIfAborted = function () { if (this.aborted) throw new DOMException('Aborted', 'AbortError'); };
+    }
     let pendingSearchKey = '';
     let lastSearchQuery = '';
     let searchState = 'idle';
@@ -1924,8 +1947,60 @@
     function saveSearchHistory(term) { const normalized = term.trim(); if (!normalized) return; const deduped = [normalized, ...searchHistory.filter(item => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 10); searchHistory = deduped; localStorage.setItem('searchHistory', JSON.stringify(searchHistory)); loadSavedSearches(); }
     function removeSearchHistory(term) { const normalized = term.trim(); searchHistory = searchHistory.filter(item => item.toLowerCase() !== normalized.toLowerCase()); localStorage.setItem('searchHistory', JSON.stringify(searchHistory)); loadSavedSearches(); }
     function clearSearchHistory() { searchHistory = []; localStorage.removeItem('searchHistory'); loadSavedSearches(); }
+    // Gallery incremental rendering state
+    // Chunk size for incremental gallery rendering (adaptive to device memory)
+    let galleryChunkSize = 20;
+    (function(){
+      try {
+        const mem = navigator.deviceMemory || 4;
+        if (mem <= 1) galleryChunkSize = 8;
+        else if (mem <= 2) galleryChunkSize = 12;
+        else if (mem <= 4) galleryChunkSize = 18;
+        else if (mem <= 8) galleryChunkSize = 30;
+        else galleryChunkSize = 40;
+      } catch(e) { galleryChunkSize = 20; }
+    })();
+    let galleryRenderCursor = 0;
+    let galleryCurrentVisible = [];
+
     function getVisibleImages(items) { const orientation = currentFilters.orientation; const list = Array.isArray(items) ? items : []; if (!orientation) return list; return list.filter(item => (item.orientation || '').toLowerCase() === orientation); }
-    function renderGallery(items, replace = false) { const grid = document.getElementById('img-grid'); if (replace) grid.innerHTML = ''; const visible = getVisibleImages(items); if (!visible.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🖼️</div><div class="empty-title">No matching images</div><div class="empty-sub">Try a different search or switch the orientation filter</div></div>'; return; } visible.forEach((item, i) => grid.insertAdjacentHTML('beforeend', buildCard(item, i))); }
+    function renderGallery(items, replace = false) {
+      const grid = document.getElementById('img-grid');
+      if (replace) {
+        grid.innerHTML = '';
+        galleryRenderCursor = 0;
+      }
+      galleryCurrentVisible = getVisibleImages(items);
+      if (!galleryCurrentVisible.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🖼️</div><div class="empty-title">No matching images</div><div class="empty-sub">Try a different search or switch the orientation filter</div></div>';
+        return;
+      }
+      // Render first chunk or remaining chunk
+      renderNextChunk();
+    }
+
+    function renderNextChunk() {
+      const grid = document.getElementById('img-grid');
+      if (!galleryCurrentVisible || galleryRenderCursor >= galleryCurrentVisible.length) return;
+      const end = Math.min(galleryCurrentVisible.length, galleryRenderCursor + galleryChunkSize);
+      const fragment = document.createDocumentFragment();
+      for (let i = galleryRenderCursor; i < end; i++) {
+        const item = galleryCurrentVisible[i];
+        const tpl = document.createElement('template');
+        tpl.innerHTML = buildCard(item, i).trim();
+        if (tpl.content.firstChild) fragment.appendChild(tpl.content.firstChild);
+      }
+      grid.appendChild(fragment);
+      galleryRenderCursor = end;
+      // show or hide load-more control depending on remaining items
+      const loadWrap = document.getElementById('load-more-wrap');
+      if (galleryRenderCursor < galleryCurrentVisible.length) {
+        if (loadWrap) loadWrap.style.display = '';
+      } else {
+        // if no more local items, keep loadWrap controlled by server pagination
+        if (loadWrap) loadWrap.style.display = '';
+      }
+    }
     function updateFilters() { currentFilters.orientation = document.getElementById('filter-orientation').value; if (currentImages.length) { renderGallery(currentImages, true); } }
     function scrollToSearchResults() { const results = document.getElementById('results-section'); if (!results) return; results.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
     function clearSearchInput() { const input = document.getElementById('search-input'); input.value = ''; document.getElementById('suggestions-dropdown').style.display = 'none'; input.focus(); setSearchState('idle'); }
@@ -1939,8 +2014,16 @@
     function retryLastSearch() { if (lastSearchQuery) { searchImages(lastSearchQuery, { immediate: true, debounced: false }); } }
     function showDemoImages(replace) { const demos = [{ src: 'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg?auto=compress&cs=tinysrgb&w=600', credit: 'Pexels', creditUrl: 'https://pexels.com', orig: 'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg', id: 'demo-1' }, { src: 'https://images.pexels.com/photos/3075993/pexels-photo-3075993.jpeg?auto=compress&cs=tinysrgb&w=600', credit: 'Pexels', creditUrl: 'https://pexels.com', orig: 'https://images.pexels.com/photos/3075993/pexels-photo-3075993.jpeg', id: 'demo-2' }, { src: 'https://images.pexels.com/photos/1323550/pexels-photo-1323550.jpeg?auto=compress&cs=tinysrgb&w=600', credit: 'Pexels', creditUrl: 'https://pexels.com', orig: 'https://images.pexels.com/photos/1323550/pexels-photo-1323550.jpeg', id: 'demo-3' }, { src: 'https://images.pexels.com/photos/247431/pexels-photo-247431.jpeg?auto=compress&cs=tinysrgb&w=600', credit: 'Pexels', creditUrl: 'https://pexels.com', orig: 'https://images.pexels.com/photos/247431/pexels-photo-247431.jpeg', id: 'demo-4' }]; const items = demos.map((d, i) => createImageRecord({ id: d.id, img: d.src, orig: d.orig, credit: d.credit, creditUrl: d.creditUrl, width: 1200, height: 800, tags: ['demo', 'nature', 'wallpaper'] }, 'demo', i)); currentImages = [...items]; renderGallery(items, replace); document.getElementById('results-label').textContent = 'Demo Gallery'; document.getElementById('results-count').textContent = 'Demo — add API key for live search'; }
     function buildCard(item, i) {
+      // Provide responsive srcset and decoding to improve loading and rendering
+      const src400 = optimizeImageUrl(item.src, 400);
+      const src800 = optimizeImageUrl(item.src, 800);
+      const src1200 = optimizeImageUrl(item.src, 1200);
+      const srcset = `${src400} 400w, ${src800} 800w, ${src1200} 1200w`;
+      const sizes = `(max-width:640px) 100vw, (max-width:1200px) 33vw, 240px`;
+      const w = item.width || 1200;
+      const h = item.height || 800;
       return `<div class="img-card" data-id="${item.id}" style="animation-delay:${i * .06}s">
-  <img src="${item.src}" alt="${item.credit}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=Image'"/>
+  <img src="${src800}" srcset="${srcset}" sizes="${sizes}" width="${w}" height="${h}" decoding="async" alt="${item.credit}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=Image'"/>
   <div class="img-overlay">
     <div class="img-credit">Photo by <a href="${item.creditUrl}" target="_blank">${item.credit}</a></div>
     <div class="img-actions">
@@ -1951,9 +2034,22 @@
       <button class="img-action-btn detail" data-action="collection" data-id="${item.id}">🗂 Add</button>
     </div>
   </div>
-</div>`;
+</div>`
     }
-    async function loadMore() { currentPage++; document.getElementById('load-more-wrap').style.display = 'none'; showSkeletons(); await fetchImages(currentQuery, currentPage, false); }
+    async function loadMore() { 
+      // If there are still local gallery items to render, render next chunk first
+      if (galleryCurrentVisible && galleryRenderCursor < galleryCurrentVisible.length) {
+        renderNextChunk();
+        return;
+      }
+      currentPage++; document.getElementById('load-more-wrap').style.display = 'none'; showSkeletons(); const result = await fetchImages(currentQuery, currentPage, false); // fetchImages will append into currentImages and call renderGallery for page 1; for subsequent pages we'll merge and render next chunk
+      if (result && result.images && result.images.length) {
+        // merge new images into currentImages and continue incremental rendering
+        currentImages = currentImages.concat(result.images);
+        galleryCurrentVisible = getVisibleImages(currentImages);
+        renderNextChunk();
+      }
+    }
     function downloadImg(url, id) { if (url === '#') { showToast('Add API key for downloads', 'info'); return; } const link = document.createElement('a'); fetch(url).then(r => r.blob()).then(blob => { const blobUrl = window.URL.createObjectURL(blob); link.href = blobUrl; link.download = `imagelens-${id}.jpg`; link.style.display = 'none'; document.body.appendChild(link); link.click(); document.body.removeChild(link); window.URL.revokeObjectURL(blobUrl); showToast('Download complete!', 'success'); }).catch(() => { showToast('Opening image in new tab...', 'info'); window.open(url, '_blank', 'noopener'); }); }
     function openLightbox(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox').classList.add('open'); }
     function closeLightbox(e) { if (!e || e.target === document.getElementById('lightbox') || e.target.classList.contains('lightbox-close')) { document.getElementById('lightbox').classList.remove('open'); setTimeout(() => document.getElementById('lightbox-img').src = '', 300); } }
@@ -1982,7 +2078,37 @@
     function toggleVoiceSearch() { if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { showToast('Speech recognition is not supported in this browser', 'error'); return; } if (!speechRecognition) { const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; speechRecognition = new SpeechRecognition(); speechRecognition.continuous = false; speechRecognition.interimResults = false; speechRecognition.lang = currentLanguage === 'ar' ? 'ar-SA' : currentLanguage === 'ur' ? 'ur-PK' : currentLanguage === 'hi' ? 'hi-IN' : currentLanguage === 'es' ? 'es-ES' : currentLanguage === 'fr' ? 'fr-FR' : 'en-US'; speechRecognition.onstart = () => { voiceListening = true; document.getElementById('voice-btn').classList.add('listening'); showToast('Listening…', 'info'); }; speechRecognition.onresult = (event) => { const transcript = Array.from(event.results).map(r => r[0].transcript).join(' ').trim(); if (transcript) { document.getElementById('search-input').value = transcript; searchImages(); } }; speechRecognition.onerror = (event) => { voiceListening = false; document.getElementById('voice-btn').classList.remove('listening'); const messages = { 'not-allowed': 'Microphone permission denied', 'no-speech': 'No speech detected', network: 'Network error', aborted: 'Speech timed out' }; showToast(messages[event.error] || 'Voice search error', 'error'); }; speechRecognition.onend = () => { voiceListening = false; document.getElementById('voice-btn').classList.remove('listening'); }; } if (voiceListening) { speechRecognition.stop(); } else { speechRecognition.start(); } }
     function loadTrendingSearches() { const container = document.getElementById('trending-tags'); container.innerHTML = trendingSearches.map(tag => `<div class="tag" onclick="setSuggestion('${tag}')">${tag}</div>`).join(''); }
     function loadSavedSearches() { const container = document.getElementById('saved-searches'); if (!searchHistory.length) { container.innerHTML = '<span class="history-empty">Your searches appear here</span>'; return; } const escapeValue = value => String(value).replace(/'/g, "\\'"); container.innerHTML = `${searchHistory.slice(0, 10).map(search => `<div class="history-chip"><button class="history-chip-btn" onclick="setSuggestion('${escapeValue(search)}')">${search}</button><button class="history-remove" onclick="event.stopPropagation();removeSearchHistory('${escapeValue(search)}')">×</button></div>`).join('')}<button class="history-clear" onclick="clearSearchHistory()">Clear all</button>`; }
-    window.addEventListener('scroll', () => { const btn = document.getElementById('scroll-top'); if (window.scrollY > 400) btn.classList.add('visible'); else btn.classList.remove('visible'); });
+    // Throttled scroll handler using requestAnimationFrame to reduce work on scroll
+    (function(){
+      let lastY = 0; let ticking = false;
+      window.addEventListener('scroll', () => {
+        lastY = window.scrollY;
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const btn = document.getElementById('scroll-top');
+            if (btn) btn.classList.toggle('visible', lastY > 400);
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+    })();
+
+    // Auto-load more when the load-more button becomes visible (keeps existing button UX intact)
+    (function(){
+      const loadWrap = document.getElementById('load-more-wrap');
+      if (!loadWrap || !('IntersectionObserver' in window)) return;
+      let loadingMore = false;
+      const obs = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{
+          if (e.isIntersecting && !loadingMore && loadWrap.offsetParent !== null) {
+            loadingMore = true;
+            setTimeout(async ()=>{ await loadMore(); loadingMore = false; }, 120);
+          }
+        });
+      }, { root: null, rootMargin: '300px', threshold: 0.1 });
+      obs.observe(loadWrap);
+    })();
     window.addEventListener('DOMContentLoaded', async () => { const imgGrid = document.getElementById('img-grid'); if (imgGrid) { imgGrid.addEventListener('click', event => { const button = event.target.closest('.img-action-btn'); if (!button) return; event.stopPropagation(); const action = button.dataset.action; const id = button.dataset.id; const url = button.dataset.url; if (action === 'download') { const image = currentImages.find(img => img.id === id); downloadImg(image?.orig || image?.src || '', id); } if (action === 'view') { const image = currentImages.find(img => img.id === id); openLightbox(image?.src || url); } if (action === 'bookmark') { const image = currentImages.find(img => img.id === id); if (image) { toggleFavorite(id); } } if (action === 'detail') { openDetailById(id); } if (action === 'collection') { const image = currentImages.find(img => img.id === id); if (image) { handleCollectionAction(image); } } }); } const newsletter = document.getElementById('newsletter-form'); if (newsletter) newsletter.addEventListener('submit', event => { event.preventDefault(); const email = document.getElementById('newsletter-email'); if (email.checkValidity()) { showToast('Thanks for subscribing!', 'success'); newsletter.reset(); } else { email.reportValidity(); } }); window.ImageLensI18n.populateSelect(document.getElementById('footer-language')); window.ImageLensI18n.createPicker(document.getElementById('language-picker')); await setLanguage(currentLanguage); loadTrendingSearches(); loadSavedSearches(); setSearchState('idle'); showDemoImages(true); setTimeout(() => { document.getElementById('results-section').style.display = ''; document.getElementById('results-count').textContent = 'Demo — add API key for live search'; }, 700); });
     window.addEventListener('DOMContentLoaded', () => {
       const newsletter = document.getElementById('newsletter-form-premium');
