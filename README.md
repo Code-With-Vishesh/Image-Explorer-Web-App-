@@ -17,7 +17,7 @@
 <br>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Code--With--Vishesh-181717?style=for-the-badge\&logo=github)](https://github.com/Code-With-Vishesh)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Vishesh%20Jaiswal-0A66C2?style=for-the-badge\&logo=linkedin)](https://www.linkedin.com/in/vishesh-jaiswal-382249350/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Vishesh%20Jaiswal-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/codewithvishesh/)
 
 </div>
 
