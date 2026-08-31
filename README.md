@@ -35,13 +35,18 @@ The project also includes a simple **authentication system using LocalStorage**,
 
 ---
 
-## � Home Page
-
-Experience the stunning ImageLens interface — a modern image discovery platform with an intuitive design.
-
-<div align="center">
+## 🏠 Home Page
 
 ![ImageLens Homepage](https://img.shields.io/badge/ImageLens-Homepage-8A2BE2?style=for-the-badge)
+
+The **Home Page** serves as the primary hub for ImageLens, allowing users to discover, search, and explore high-resolution images seamlessly.
+
+### ✨ Key Features
+* **Hero Search Bar:** Instant image search with real-time query suggestions.
+* **Featured Collections:** Curated categories and trending visual topics.
+* **Responsive Grid:** Dynamic layout optimized for desktop, tablet, and mobile viewing.
+
+![Home Page Screenshot](https://raw.githubusercontent.com/Code-With-Vishesh/Image-Explorer-Web-App-/76c9695574595c48ea58259a0212bdaeaae330b1/Screenshot%202026-08-25%20221124.png)
 
 **Powered by Code With Vishesh**
 
