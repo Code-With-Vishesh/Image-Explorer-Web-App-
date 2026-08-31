@@ -504,13 +504,13 @@ Add screenshots of your application here.
 ### 🏠 Home Page
 
 
-(https://github.com/Code-With-Vishesh/Image-Explorer-Web-App-/blob/76c9695574595c48ea58259a0212bdaeaae330b1/Screenshot%202026-08-25%20221124.png)
+https://github.com/Code-With-Vishesh/Image-Explorer-Web-App-/blob/76c9695574595c48ea58259a0212bdaeaae330b1/Screenshot%202026-08-25%20221124.png
 
 
 ### 🔍 Search Results
 
 
-(https://github.com/Code-With-Vishesh/Image-Explorer-Web-App-/blob/3730002821d15e9202f03368db08db9ae2cb41f9/Screenshot%202026-08-31%20164337.png)
+https://github.com/Code-With-Vishesh/Image-Explorer-Web-App-/blob/3730002821d15e9202f03368db08db9ae2cb41f9/Screenshot%202026-08-31%20164337.png
 
 
 ### 🖼️ Image Preview
