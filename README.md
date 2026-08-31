@@ -488,18 +488,10 @@ For the best development experience, use **VS Code + Live Server**.
 
 # 🌐 Live Demo
 
-🚀 **Live Demo:**
-Add your deployed project URL here.
-
-```text
-https://image-explorer-web-app.vercel.app/
-```
+🚀 **Live Demo:** [https://image-explorer-web-app.vercel.app/](https://image-explorer-web-app.vercel.app/)
 
 ---
 
-# 📸 Screenshots
-
-Add screenshots of your application here.
 
 ## 🏠 Home Page
 
@@ -512,15 +504,11 @@ Add screenshots of your application here.
 
 ### 🖼️ Image Preview
 
-```text
-Add your screenshot here
-```
+![Image Preview](./Screenshot%202026-08-31%20170654.png)
 
 ### 🔐 Login / Signup
 
-```text
-Add your screenshot here
-```
+![Login and Signup](./Screenshot%202026-08-31%20170738.png)
 
 ---
 
